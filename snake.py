@@ -1,42 +1,85 @@
-#!/usr/bin/env python3.8.0
+#!/usr/bin/env python3
+import sys
+import getpass
+if getpass.getuser() != 'root':
+    sys.exit("Must be run as root.")
+import os
 import pygame
+import time
+
 import random
 from datetime import datetime
 from datetime import timedelta
- 
-pygame.init() 
- 
-WHITE = (255,255,255)
-RED = (255,0,0)
-GREEN = (0,255,0)
-size = [400,400]
-screen = pygame.display.set_mode(size)
- 
-done= False
-clock= pygame.time.Clock()
-last_moved_time = datetime.now()
- 
-KEY_DIRECTION = {
-    pygame.K_UP: 'N',
-    pygame.K_DOWN: 'S',
-    pygame.K_LEFT: 'W',
-    pygame.K_RIGHT: 'E',
-}
- 
-def draw_block(screen, color, position):
-    block = pygame.Rect((position[1] * 20, position[0] * 20),
-                        (20, 20))
-    pygame.draw.rect(screen, color, block)
- 
+
+class Game:
+    screen = None
+    WHITE = (255,255,255)
+    RED = (255,0,0)
+    GREEN = (0,255,0)
+    done = False
+    clock = pygame.time.Clock()
+    last_moved_time = datetime.now()
+    
+    def __init__(self): 
+        "Ininitializes a new pygame screen using the framebuffer"
+        # Based on "Python GUI in Linux frame buffer"
+        # http://www.karoltomala.com/blog/?p=679
+        # os.putenv('SDL_FBDEV',   '/dev/fb0')
+        # os.putenv('SDL_VIDEODRIVER', driver)
+        os.putenv('SDL_NOMOUSE', '1')
+        pygame.display.init()
+        
+        size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+        print("Framebuffer size: ", size[0], "x", size[1])
+        self.screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+        # Clear the screen to start
+        self.screen.fill((0, 0, 0))   
+        # Turn off cursor
+        pygame.mouse.set_visible(False)
+        # Initialise font support
+        pygame.font.init()
+    
+    def draw_block(self, screen, color, position):
+        block = pygame.Rect((position[1] * 20, position[0] * 20),
+                            (20, 20))
+        pygame.draw.rect(screen, color, block)
+        
+    def runGame(self):
+        snake = Snake(self)
+        apple = Apple(self)
+        
+        while not self.done:
+            self.clock.tick(10)
+            self.screen.fill(self.WHITE)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.done = True 
+            if timedelta(seconds=0.1) <= datetime.now() - self.last_moved_time:
+                snake.move()
+                self.last_moved_time = datetime.now()
+                
+            if snake.positions[0] == apple.position:
+                snake.grow()
+                apple.position = (random.randint(0,19), random.randint(0,19))
+                
+            if snake.positions[0] in snake.positions[1:]:
+                self.done = True
+                
+            snake.draw()
+            apple.draw()
+            pygame.display.update()
+    
 class Snake:
-    def __init__(self):
+    def __init__(self, Game):
         self.positions = [(0,2),(0,1),(0,0)] 
         self.direction = ''
- 
+        self.Game = Game
+
     def draw(self):
         for position in self.positions: 
-            draw_block(screen, GREEN, position)
- 
+            self.Game.draw_block(self.Game.screen, self.Game.GREEN, position)
+
     def move(self):
         head_position = self.positions[0]
         y, x = head_position
@@ -48,7 +91,7 @@ class Snake:
             self.positions = [(y, x - 1)] + self.positions[:-1]
         elif self.direction == 'E':
             self.positions = [(y, x + 1)] + self.positions[:-1]
- 
+
     def grow(self):
         tail_position = self.positions[-1]
         y, x = tail_position
@@ -60,48 +103,14 @@ class Snake:
             self.positions.append((y, x - 1))
         elif self.direction == 'C':
             self.positions.append((y, x + 1))    
- 
- 
+
 class Apple:
-    def __init__(self, position=(5, 5)):
+    def __init__(self, Game, position=(5, 5)):
         self.position = position
- 
+        self.Game = Game
+
     def draw(self):
-        draw_block(screen, RED, self.position)
- 
-
-def runGame():
-    global done, last_moved_time
-
-    snake = Snake() 
-    apple = Apple()
- 
-    while not done:
-        clock.tick(10)
-        screen.fill(WHITE)
- 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done=True
-            if event.type == pygame.KEYDOWN:
-                if event.key in KEY_DIRECTION:
-                    snake.direction = KEY_DIRECTION[event.key]
- 
-        if timedelta(seconds=0.1) <= datetime.now() - last_moved_time:
-            snake.move()
-            last_moved_time = datetime.now()
- 
-        if snake.positions[0] == apple.position:
-            snake.grow()    
-            apple.position = (random.randint(0, 19), random.randint(0, 19))
+        self.Game.draw_block(self.Game.screen, self.Game.RED, self.position)
         
-        if snake.positions[0] in snake.positions[1:]:
-            done = True
- 
- 
-        snake.draw()
-        apple.draw()
-        pygame.display.update()
- 
-runGame()
-pygame.quit()
+game = Game()
+game.runGame()
