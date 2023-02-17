@@ -6,6 +6,7 @@ if getpass.getuser() != 'root':
 import os
 import pygame
 import time
+import threading
 
 import random
 from datetime import datetime
@@ -48,38 +49,85 @@ class Game:
         snake = Snake(self)
         apple = Apple(self)
         
+        # Encoder - input(direction for snake)
+        EncPath1 = '/sys/bus/counter/devices/counter2/count0'
+        f = open(EncPath1+'/ceiling', 'w')
+        f.write('1000000')
+        f.close()
+        f = open(EncPath1+'/count', 'w')
+        f.write('500000')
+        f.close()
+        f = open(EncPath1+'/enable', 'w')
+        f.write('1')
+        f.close()
+        f = open(EncPath1+'/count','r')
+        
+        oldDir = int(f.read())
+        
+        #event for encoder
+        encoderEvent = pygame.USEREVENT + 1
+        pygame.time.set_timer(encoderEvent, 250)
+        
+        repeat = 0
         while not self.done:
             self.clock.tick(10)
             self.screen.fill(self.WHITE)
-            
+        
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.done = True 
+                if event.type == encoderEvent:
+                    f.seek(0)
+                    newDir = int(f.read())
+                    
+                    right = (oldDir > newDir)
+                    left = (oldDir < newDir)
+                    
+                    oldDir = newDir
+                    snake.turn(right, left)
+                    
             if timedelta(seconds=0.1) <= datetime.now() - self.last_moved_time:
                 snake.move()
                 self.last_moved_time = datetime.now()
                 
             if snake.positions[0] == apple.position:
                 snake.grow()
-                apple.position = (random.randint(0,19), random.randint(0,19))
+                apple.position = (random.randint(0,16), random.randint(0,12))
                 
             if snake.positions[0] in snake.positions[1:]:
+                self.done = True
+            if snake.positions[0][0] > 16 or snake.positions[0][0] < 0 or snake.positions[0][1] > 12 or snake.positions[0][1] < 0:
                 self.done = True
                 
             snake.draw()
             apple.draw()
             pygame.display.update()
+            
+    
     
 class Snake:
     def __init__(self, Game):
         self.positions = [(0,2),(0,1),(0,0)] 
         self.direction = ''
         self.Game = Game
+        self.directions = ['N','E','S','W']
+        self.direction_offset = 1
 
     def draw(self):
         for position in self.positions: 
             self.Game.draw_block(self.Game.screen, self.Game.GREEN, position)
 
+    def turn(self, right, left):
+        if right:
+            self.direction_offset = (self.direction_offset + 1) % 4
+            self.direction = self.directions[self.direction_offset]
+            print('right', self.direction)
+        if left:
+            self.direction_offset = (self.direction_offset - 1) % 4
+            self.direction = self.directions[self.direction_offset]
+            print('left', self.direction)
+        
+        
     def move(self):
         head_position = self.positions[0]
         y, x = head_position
