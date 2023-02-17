@@ -12,6 +12,8 @@ import random
 from datetime import datetime
 from datetime import timedelta
 
+import Adafruit_BBIO.GPIO as GPIO
+
 class Game:
     screen = None
     WHITE = (255,255,255)
