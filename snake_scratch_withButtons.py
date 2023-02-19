@@ -35,6 +35,7 @@ class Game:
     tick = 10
     time = 0.1
     score = 0
+    reset = 0
     
     def __init__(self): 
         "Ininitializes a new pygame screen using the framebuffer"
@@ -66,7 +67,9 @@ class Game:
     
     def resetGame(self):
         print("Reseting game")
-        Game.done = True
+        reset = 1
+        Snake.positions = [(0,2),(0,1),(0,0)] 
+        Snake.direction = ''
         game = Game()
         game.runGame()
 
@@ -192,19 +195,35 @@ GPIO.add_event_detect(button1, GPIO.BOTH, callback=Game.timeincrease)
 GPIO.add_event_detect(button2, GPIO.BOTH, callback=Game.timedecrease)
 GPIO.add_event_detect(button3, GPIO.BOTH, callback=Game.resetGame) 
       
-#Basic case of the route for Flask
-@app.route("/")
-def index():
-    scoreboard = Game.score
-    template_data = {
-        'title' : "Snake Game Scoreboard",
-        'Scoreboard' : scoreboard
-    }
-    return render_template("SnakeGame.html", **template_data)
+# # #Basic case of the route for Flask
+# @app.route("/")
+# def index():
+#     scoreboard = Game.score
+#     template_data = {
+#         'title' : "Snake Game Scoreboard",
+#         'Scoreboard' : scoreboard
+#     }
+#     return render_template("SnakeGame.html", **template_data)
+# # Route for flask based on the button press
+# @app.route("/<action>")
+# def action(action):
+# 	#Select the action
+# 	if action == 'right':
+# 		Snake.turn(100,0)
+# 	elif action == 'left':
+# 		Snake.turn(0,100)
+# 	elif action == 'reset':
+# 		Game.resetGame(Game)
 
-if __name__=="__main__":
-    app.run(host='0.0.0.0', port=8082, debug=True)  
-      
-game = Game()
-game.runGame()
+# 	template_data = {
+# 		'title' : "Snake Game Controls",
+# 	}
+
+# 	return render_template("SnakeGame.html", **template_data)
+# if __name__=="__main__":
+#     app.run(host='0.0.0.0', port=8082, debug=True)  
+    
+if Game.reset == 0:    
+    game = Game()
+    game.runGame()
 
