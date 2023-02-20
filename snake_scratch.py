@@ -70,7 +70,6 @@ class Game:
         encoderEvent = pygame.USEREVENT + 1
         pygame.time.set_timer(encoderEvent, 250)
         
-        repeat = 0
         while not self.done:
             self.clock.tick(10)
             self.screen.fill(self.WHITE)
@@ -98,7 +97,7 @@ class Game:
                 
             if snake.positions[0] in snake.positions[1:]:
                 self.done = True
-            if snake.positions[0][0] > 16 or snake.positions[0][0] < 0 or snake.positions[0][1] > 12 or snake.positions[0][1] < 0:
+            if snake.positions[0][0] >= 16 or snake.positions[0][0] <= 0 or snake.positions[0][1] >= 12 or snake.positions[0][1] <= 0:
                 self.done = True
                 
             snake.draw()
@@ -153,6 +152,7 @@ class Snake:
             self.positions.append((y, x - 1))
         elif self.direction == 'C':
             self.positions.append((y, x + 1))    
+            
 
 class Apple:
     def __init__(self, Game, position=(5, 5)):
@@ -161,6 +161,12 @@ class Apple:
 
     def draw(self):
         self.Game.draw_block(self.Game.screen, self.Game.RED, self.position)
-        
-game = Game()
-game.runGame()
+
+button1 = "P9_21"
+GPIO.setup(button1, GPIO.IN)
+while True:
+    restart = GPIO.input(button1)
+    if restart:
+        game = Game()
+        game.runGame()
+
