@@ -93,11 +93,12 @@ class Game:
                 
             if snake.positions[0] == apple.position:
                 snake.grow()
-                apple.position = (random.randint(0,16), random.randint(0,12))
+                apple.position = (random.randint(0,12), random.randint(0,16))
                 
             if snake.positions[0] in snake.positions[1:]:
                 self.done = True
-            if snake.positions[0][0] >= 16 or snake.positions[0][0] <= 0 or snake.positions[0][1] >= 12 or snake.positions[0][1] <= 0:
+            if snake.positions[0][0] > 12 or snake.positions[0][0] < 0 or snake.positions[0][1] > 16 or snake.positions[0][1] < 0:
+                print(snake.positions[0])
                 self.done = True
                 
             snake.draw()
