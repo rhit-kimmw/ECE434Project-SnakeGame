@@ -1,4 +1,9 @@
 #!/bin/bash
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
+
 # From: https://www.pygame.org/wiki/GettingStarted
 
 apt install python3-pygame python3-tk libopenjp2-7 # 
